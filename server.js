@@ -1,8 +1,13 @@
-// server.js - Express server for CDMA simulation
+// server.js - Express server for CDMA simulation (ES Module version)
 
-const express = require("express");
-const path = require("path");
-const { encode, decode, combineSignals, generateWalshMatrix, displayWalshMatrix } = require("./cdma");
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+import { encode, decode, combineSignals, generateWalshMatrix, displayWalshMatrix } from "./cdma.js";
+
+// Needed for __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,26 +30,22 @@ app.post("/simulate", (req, res) => {
       return res.status(400).json({ error: "No stations provided" });
     }
 
-    // Validate input data
     for (let i = 0; i < stations.length; i++) {
       if (!stations[i] || !/^[01]+$/.test(stations[i].trim())) {
-        return res.status(400).json({ 
-          error: `Station ${i + 1} has invalid data. Please use only 0s and 1s.` 
+        return res.status(400).json({
+          error: `Station ${i + 1} has invalid data. Please use only 0s and 1s.`
         });
       }
     }
 
-    // Calculate required Walsh matrix size (next power of 2)
     const walshSize = Math.pow(2, Math.ceil(Math.log2(stations.length)));
     const walshMatrix = generateWalshMatrix(walshSize);
 
-    // Display Walsh matrix in console for debugging
     console.log(`\n=== CDMA Simulation ===`);
     console.log(`Stations: ${stations.length}`);
     console.log(`Walsh Matrix Size: ${walshSize}x${walshSize}`);
     displayWalshMatrix(walshMatrix.slice(0, stations.length));
 
-    // Encode each station's data
     const encodedSignals = stations.map((bits, idx) => {
       const bitArray = bits.trim().split("").map(Number);
       const encoded = encode(bitArray, walshMatrix[idx]);
@@ -56,7 +57,6 @@ app.post("/simulate", (req, res) => {
     const combined = combineSignals(encodedSignals);
     console.log(`Combined Signal: [${combined.join(', ')}]`);
 
-    // Decode for each station
     const decoded = walshMatrix.slice(0, stations.length).map((code, idx) => {
       const decodedBits = decode(combined, code);
       console.log(`Decoded Station ${idx + 1}: [${decodedBits.join('')}]`);
@@ -79,6 +79,7 @@ app.post("/simulate", (req, res) => {
   }
 });
 
+// Walsh matrix endpoint
 app.get("/walsh/:size", (req, res) => {
   try {
     const size = parseInt(req.params.size);
@@ -94,13 +95,12 @@ app.get("/walsh/:size", (req, res) => {
   }
 });
 
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: "Something went wrong!" });
 });
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
@@ -108,8 +108,4 @@ app.use((req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 CDMA Visualizer Server running on http://localhost:${PORT}`);
-  console.log(`📊 Visit the application in your browser`);
-  console.log(`🔧 API endpoints:`);
-  console.log(`   POST /simulate - Run CDMA simulation`);
-  console.log(`   GET /walsh/:size - Get Walsh matrix of specified size`);
 });

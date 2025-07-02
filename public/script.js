@@ -5,6 +5,7 @@ const simulateBtn = document.getElementById("simulate-btn");
 
 let stationCount = 0;
 
+// Add a new station input
 function addStation(prefill = "") {
   const id = Date.now();
   stationCount++;
@@ -19,11 +20,13 @@ function addStation(prefill = "") {
   div.querySelector(".remove-btn").onclick = () => removeStation(id);
 }
 
+// Remove a station input
 function removeStation(id) {
   document.getElementById(`station-${id}`).remove();
   stationCount = inputsEl.children.length;
 }
 
+// Clear everything and start fresh
 function clearAll() {
   inputsEl.innerHTML = "";
   vizEl.innerHTML = "";
@@ -32,32 +35,38 @@ function clearAll() {
   addStation();
 }
 
+// Show success or error message
 function showMessage(text, type = "error") {
   messagesEl.innerHTML = `<div class="message ${type}">${text}</div>`;
   setTimeout(() => { messagesEl.innerHTML = ""; }, 5000);
 }
 
+// Validate and collect station inputs
 function getStations() {
   const arr = [];
   for (const div of inputsEl.children) {
     const val = div.querySelector("input").value.trim();
-    if (!val.match(/^[01]+$/)) throw new Error("All inputs must be non-empty and binary (0/1).");
+    if (!val.match(/^[01]+$/)) {
+      throw new Error("All inputs must be non-empty and binary (0/1).");
+    }
     arr.push(val);
   }
   if (arr.length === 0) throw new Error("Add at least one station.");
   return arr;
 }
 
+// Simulate CDMA by calling the backend
 async function simulate() {
   if (simulateBtn.disabled) return;
+
   try {
     const data = getStations();
     simulateBtn.disabled = true;
     simulateBtn.innerHTML = `<span class="loading"></span>Simulating...`;
 
-    const resp = await fetch("/simulate", {
+    const resp = await fetch("/api/simulate", {
       method: "POST",
-      headers: { "Content-Type":"application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stations: data })
     });
 
@@ -69,7 +78,7 @@ async function simulate() {
     const result = await resp.json();
     renderResult(result);
     showMessage("✅ Simulation successful!", "success");
-  } catch(err) {
+  } catch (err) {
     showMessage(`⚠️ ${err.message}`, "error");
   } finally {
     simulateBtn.disabled = false;
@@ -77,6 +86,7 @@ async function simulate() {
   }
 }
 
+// Render visual output
 function renderResult({ originalData, walshCodes, encodedSignals, combined, decoded }) {
   vizEl.innerHTML = "";
 
@@ -84,7 +94,7 @@ function renderResult({ originalData, walshCodes, encodedSignals, combined, deco
     const sec = document.createElement("div");
     sec.className = "section";
     sec.innerHTML = `<h3>${title}</h3>`;
-    items.forEach((bits, idx) => {
+    items.forEach(bits => {
       const row = document.createElement("div");
       row.className = "bit-row";
       const arr = Array.isArray(bits) ? bits : bits.split("");
@@ -106,9 +116,10 @@ function renderResult({ originalData, walshCodes, encodedSignals, combined, deco
   buildSection("✅ Decoded Signals", decoded, "decoded");
 }
 
+// Event listeners
 document.getElementById("add-btn").onclick = () => addStation();
 document.getElementById("clear-btn").onclick = clearAll;
 simulateBtn.onclick = simulate;
 
-// initialize
+// Initialize with one station
 clearAll();

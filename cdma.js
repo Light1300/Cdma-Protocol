@@ -1,5 +1,6 @@
 // cdma.js
-function generateWalshMatrix(n) {
+
+export function generateWalshMatrix(n) {
   if (n === 1) return [[1]];
   const prev = generateWalshMatrix(n / 2);
   const top = prev.map(row => [...row, ...row]);
@@ -7,18 +8,18 @@ function generateWalshMatrix(n) {
   return [...top, ...bottom];
 }
 
-function encode(bits, code) {
+export function encode(bits, code) {
   return bits.flatMap(bit => code.map(c => c * (bit === 1 ? 1 : -1)));
 }
 
-function combineSignals(encodedSignals) {
+export function combineSignals(encodedSignals) {
   const length = encodedSignals[0].length;
   return encodedSignals.reduce((combined, signal) => {
     return combined.map((val, i) => val + signal[i]);
   }, new Array(length).fill(0));
 }
 
-function decode(combined, code) {
+export function decode(combined, code) {
   const chunkSize = code.length;
   const numChunks = combined.length / chunkSize;
   const result = [];
@@ -32,9 +33,7 @@ function decode(combined, code) {
   return result;
 }
 
-function displayWalshMatrix(matrix) {
+export function displayWalshMatrix(matrix) {
   console.log("Walsh Matrix:");
   matrix.forEach((row, i) => console.log(`Code ${i + 1}: [${row.join(', ')}]`));
 }
-
-module.exports = { generateWalshMatrix, encode, combineSignals, decode, displayWalshMatrix };
